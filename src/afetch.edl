@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+enclave {
+    from "openenclave/edl/syscall.edl" import *;
+    from "platform.edl" import *;
+
+    trusted {
+        public void enclave_main(
+            [string, in] const char* url,
+            [string, in] const char* nonce,
+            [user_check] char** output
+        );
+    };
+
+    untrusted {
+    };
+};

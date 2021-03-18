@@ -1,0 +1,6 @@
+[submodule "3rdparty/nlohmann-json"]
+	path = 3rdparty/nlohmann-json
+	url = https://github.com/nlohmann/json
+[submodule "3rdparty/openenclave-curl/curl"]
+	path = 3rdparty/openenclave-curl/curl
+	url = https://github.com/curl/curl.git
