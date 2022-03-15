@@ -70,4 +70,18 @@ namespace afetch {
   {
     return sha256((uint8_t*)s.data(), s.size());
   }
+
+  std::vector<uint8_t> sha256_two(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b)
+  {
+    std::vector<uint8_t> hash;
+    hash.resize(32);
+    mbedtls_sha256_context ctx;
+    mbedtls_sha256_init(&ctx);
+    mbedtls_sha256_starts_ret(&ctx, 0);
+    mbedtls_sha256_update_ret(&ctx, a.data(), a.size());
+    mbedtls_sha256_update_ret(&ctx, b.data(), b.size());
+    mbedtls_sha256_finish_ret(&ctx, hash.data());
+    mbedtls_sha256_free(&ctx);
+    return hash;
+  }
 }
