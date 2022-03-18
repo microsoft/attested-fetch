@@ -73,8 +73,7 @@ namespace afetch {
 
   std::vector<uint8_t> sha256_two(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b)
   {
-    std::vector<uint8_t> hash;
-    hash.resize(32);
+    std::vector<uint8_t> hash(32);
     mbedtls_sha256_context ctx;
     mbedtls_sha256_init(&ctx);
     mbedtls_sha256_starts_ret(&ctx, 0);
