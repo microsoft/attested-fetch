@@ -11,8 +11,6 @@
 #include <openenclave/attestation/custom_claims.h>
 #include <openenclave/attestation/sgx/evidence.h>
 #include <nlohmann/json.hpp>
-#include <mbedtls/base64.h>
-#include <mbedtls/sha256.h>
 
 #include "curl.h"
 #include "util.h"
@@ -31,6 +29,8 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
     oe_load_module_host_socket_interface();
     oe_load_module_host_resolver();
     afetch::Curl::global_init();
+
+    std::string format = "ATTESTED_FETCH_OE_SGX_ECDSA";
     
     try {
         afetch::Curl curl;
@@ -45,8 +45,12 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
         j["body"] = afetch::base64(response.body);
         j["certs"] = response.cert_chain;
 
-        std::string data = afetch::base64(j.dump(1));
-        std::vector<uint8_t> data_hash = afetch::sha256(data);
+        std::string data_json = j.dump(1);
+        std::vector<uint8_t> data_hash = afetch::sha256(data_json);
+        std::string data = afetch::base64(data_json);
+
+        std::vector<uint8_t> format_hash = afetch::sha256(format);
+        std::vector<uint8_t> sgx_report_data = afetch::sha256_two(format_hash, data_hash);
 
         // Create SGX quote with digest of output JSON as report data
         auto rc = oe_attester_initialize();
@@ -58,8 +62,8 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
         const size_t custom_claim_length = 1;
         oe_claim_t custom_claim;
         custom_claim.name = const_cast<char*>(OE_CLAIM_SGX_REPORT_DATA);
-        custom_claim.value = data_hash.data();
-        custom_claim.value_size = data_hash.size();
+        custom_claim.value = sgx_report_data.data();
+        custom_claim.value_size = sgx_report_data.size();
 
         uint8_t* serialised_custom_claims_buf = nullptr;
         size_t serialised_custom_claims_size = 0;
@@ -108,6 +112,7 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
 
         // Create attested output
         nlohmann::json out;
+        out["format"] = format;
         out["evidence"] = evidence;
         out["endorsements"] = endorsements;
         out["data"] = data;

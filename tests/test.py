@@ -27,6 +27,10 @@ def test():
     # Read attested result
     with open(out_path) as f:
         out = json.load(f)
+
+    # Check if the format is known
+    if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA":
+        raise RuntimeError(f"Unsupported format: {out['format']}")
     
     # Verify evidence and endorsements using Open Enclave
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -48,13 +52,17 @@ def test():
             if line.startswith(prefix):
                 sgx_report_data = line[len(prefix):].strip()
         assert sgx_report_data is not None
+        sgx_report_data = sgx_report_data[len("0x"):]
 
     # Check if data hash matches report data in evidence
-    data_hash = "0x" + hashlib.sha256(out["data"].encode()).digest().hex()
-    assert sgx_report_data == data_hash, f"{data_hash} != {sgx_report_data}"
+    format_hash = hashlib.sha256(out["format"].encode("ascii")).digest()
+    data_json = base64.b64decode(out["data"])
+    data_hash = hashlib.sha256(data_json).digest()
+    computed_sgx_report_data = hashlib.sha256(format_hash + data_hash).digest().hex()
+    assert sgx_report_data == computed_sgx_report_data, f"{computed_sgx_report_data} != {sgx_report_data}"
 
     # Finally, check if the data is valid JSON
-    data = json.loads(base64.b64decode(out["data"]))
+    data = json.loads(data_json)
     assert data["nonce"] == TEST_NONCE, data["nonce"]
     assert data["url"] == TEST_URL, data["url"]
     assert len(data["certs"]) > 0, data["certs"]
