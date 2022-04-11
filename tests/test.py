@@ -19,7 +19,7 @@ def test():
     # Run afetch
     subprocess.run([
         DIST_DIR / "afetch",
-        DIST_DIR / "libafetch.enclave.so",
+        DIST_DIR / "libafetch.enclave.so.signed",
         out_path,
         TEST_URL, TEST_NONCE
         ], check=True)
