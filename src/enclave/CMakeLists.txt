@@ -32,4 +32,29 @@ target_link_libraries(afetch.enclave
     openenclave::oeenclave
     openenclave::oelibc)
 
-install(TARGETS afetch.enclave LIBRARY DESTINATION .)
+# Generate an ephemeral signing key
+set(signing_key ${CMAKE_CURRENT_BINARY_DIR}/signing_key.pem)
+add_custom_command(
+    OUTPUT ${signing_key}
+    COMMAND openssl genrsa -out ${signing_key} -3 3072
+)
+
+# Sign the enclave
+set(signed_enclave ${CMAKE_CURRENT_BINARY_DIR}/libafetch.enclave.so.signed)
+set(oe_conf ${CMAKE_CURRENT_LIST_DIR}/oe_sign.conf)
+add_custom_command(
+    OUTPUT ${signed_enclave}
+    COMMAND
+    openenclave::oesign sign -e ${CMAKE_CURRENT_BINARY_DIR}/libafetch.enclave.so -c
+    ${oe_conf} -k ${signing_key}
+    DEPENDS afetch.enclave ${oe_conf} ${signing_key}
+)
+
+add_custom_target(
+    afetch.enclave_signed ALL
+    DEPENDS ${signed_enclave}
+)
+
+install(FILES ${signed_enclave}
+    DESTINATION .
+)

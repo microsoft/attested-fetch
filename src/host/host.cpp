@@ -14,7 +14,7 @@ int main(int argc, const char* argv[])
     int ret = 1;
     oe_enclave_t* enclave = NULL;
 
-    uint32_t flags = OE_ENCLAVE_FLAG_DEBUG;
+    uint32_t flags = OE_ENCLAVE_FLAG_DEBUG_AUTO;
 
     if (argc != 5)
     {
