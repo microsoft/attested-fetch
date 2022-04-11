@@ -3,6 +3,13 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+if((NOT CMAKE_CXX_COMPILER)
+   AND "$ENV{CXX}" STREQUAL ""
+)
+  set(CMAKE_C_COMPILER "/opt/oe_lvi/clang-10")
+  set(CMAKE_CXX_COMPILER "/opt/oe_lvi/clang++-10")
+endif()
+
 project(afetch-superbuild C CXX)
 
 include(ExternalProject)

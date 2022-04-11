@@ -1,0 +1,46 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - "*"
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - "*"
+  paths:
+    include:
+    - "*"
+
+resources:
+  containers:
+  - container: sgx
+  # TODO: use image specific to this project
+    image: ccfciteam/ccf-app-ci:2.0.0-rc4
+    options: --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision -v /dev/sgx:/dev/sgx
+
+jobs:
+- job: sgx
+  displayName: SGX
+ 
+  container: sgx
+  pool: cts-1es-dcv2-20.04
+
+  steps:
+  - checkout: self
+    submodules: true
+    clean: true
+
+  - bash: |
+      set -ex
+      cat /proc/cpuinfo | grep flags | uniq
+      sudo groupadd -g 119 sgx_prv
+      sudo usermod -a -G sgx_prv $(whoami)
+    displayName: Add sgx_prv group
+    
+  - bash: ./build.sh
+    displayName: Build
+  
+  - bash: ./test.sh
+    displayName: Test
