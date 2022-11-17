@@ -25,7 +25,7 @@ jobs:
   displayName: SGX
  
   container: sgx
-  pool: cts-1es-dcv2-20.04
+  pool: 1es-dcv3
 
   steps:
   - checkout: self
