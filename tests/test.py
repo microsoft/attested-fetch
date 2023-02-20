@@ -11,9 +11,12 @@ DIST_DIR = THIS_DIR.parent / 'dist'
 OEVERIFY = "/opt/openenclave/bin/oeverify"
 
 TEST_URL = "https://www.microsoft.com/en-gb/"
+TEST_URL_NON_2XX = "https://www.microsoft.com/en-gbb/foo"
+TEST_URL_REFUSED = "https://localhost:1"
 TEST_NONCE = "nonce123"
 
-def test():
+
+def test(url, expected_status):
     out_path = "test.json"
 
     # Run afetch
@@ -21,7 +24,7 @@ def test():
         DIST_DIR / "afetch",
         DIST_DIR / "libafetch.enclave.so.signed",
         out_path,
-        TEST_URL, TEST_NONCE
+        url, TEST_NONCE
         ], check=True)
     
     # Read attested result
@@ -64,10 +67,22 @@ def test():
     # Finally, check if the data is valid JSON
     data = json.loads(data_json)
     assert data["nonce"] == TEST_NONCE, data["nonce"]
-    assert data["url"] == TEST_URL, data["url"]
-    assert len(data["certs"]) > 0, data["certs"]
-    assert len(data["body"]) > 0, data["body"]
+    assert data["url"] == url, data["url"]
+    assert data["status"] == expected_status, data["status"]
+    if url != TEST_URL_REFUSED:
+        assert len(data["certs"]) > 0, data["certs"]
+        assert len(data["body"]) > 0, data["body"]
+    else:
+        print(data) 
+        assert len(data["certs"]) == 0, data["certs"]
+        assert len(data["body"]) == 0, data["body"]
+
 
 if __name__ == "__main__":
-    test()
-    print("All tests succeeded!")
+    test(TEST_URL, 200)
+    print("Mainline test succeeded!")
+    test(TEST_URL_NON_2XX, 404)
+    print("Non 2xx response test succeeded!")
+    test(TEST_URL_REFUSED, 0)
+    print("Connection refused test succeeded!")
+

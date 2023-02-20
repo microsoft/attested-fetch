@@ -48,6 +48,7 @@ namespace afetch {
     struct Response {
       std::vector<uint8_t> body;
       std::vector<std::string> cert_chain;
+      int64_t status;
     };
 
     static void global_init() {
@@ -89,25 +90,25 @@ namespace afetch {
       curl_easy_setopt(curl, CURLOPT_CAPATH, NULL);
 
       auto res = curl_easy_perform(curl);
-
       if (res != CURLE_OK) {
-        const char* err_s = curl_easy_strerror(res);
-        throw CurlOtherError(url, err_s, res);
+        if (verbose) {
+          const char* err_s = curl_easy_strerror(res);
+          std::cerr << "Fetch failed: " << err_s << std::endl;
+        }
+        response.status = 0;
+        response.body = std::vector<uint8_t>{};
+        response.cert_chain = std::vector<std::string>{};
+        return response;
       }
 
-      int64_t response_code;
-      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response.status);
 
       if (verbose) {
         std::cerr << "URL: " << url << std::endl;
-        std::cerr << "Response code:" << response_code << std::endl;
+        std::cerr << "Response status code: " << response.status << std::endl;
         std::cerr << "Response body:" << std::string((char*)response.body.data(), response.body.size()) << std::endl;
       }
 
-      if (response_code >= 400) {
-        throw CurlHTTPError(url, response_code);
-      }
-     
       struct curl_certinfo *certinfo;
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &certinfo);
 

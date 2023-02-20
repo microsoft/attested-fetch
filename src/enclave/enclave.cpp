@@ -33,6 +33,7 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
         nlohmann::json j;
         j["url"] = url;
         j["nonce"] = nonce;
+        j["status"] = response.status;
         j["body"] = afetch::base64(response.body);
         j["certs"] = response.cert_chain;
 
