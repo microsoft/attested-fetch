@@ -10,7 +10,7 @@ DIST_DIR = THIS_DIR.parent / 'dist'
 
 OEVERIFY = "/opt/openenclave/bin/oeverify"
 
-TEST_URL = "https://www.microsoft.com/en-gb/"
+TEST_URL_2XX = "https://www.microsoft.com/en-gb/"
 TEST_URL_NON_2XX = "https://www.microsoft.com/en-gbb/foo"
 TEST_URL_REFUSED = "https://localhost:1"
 TEST_NONCE = "nonce123"
@@ -32,7 +32,7 @@ def test(url, expected_status):
         out = json.load(f)
 
     # Check if the format is known
-    if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA":
+    if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA_V2":
         raise RuntimeError(f"Unsupported format: {out['format']}")
     
     # Verify evidence and endorsements using Open Enclave
@@ -68,21 +68,20 @@ def test(url, expected_status):
     data = json.loads(data_json)
     assert data["nonce"] == TEST_NONCE, data["nonce"]
     assert data["url"] == url, data["url"]
-    assert data["status"] == expected_status, data["status"]
-    if url != TEST_URL_REFUSED:
-        assert len(data["certs"]) > 0, data["certs"]
-        assert len(data["body"]) > 0, data["body"]
+    if expected_status is None:
+        assert data.get("result") == None, data.get("result")
+        assert data["error"]["message"] == "Couldn't connect to server", data["error"]["message"]
     else:
-        print(data) 
-        assert len(data["certs"]) == 0, data["certs"]
-        assert len(data["body"]) == 0, data["body"]
+        assert data["result"]["status"] == expected_status, data["result"]["status"]
+        assert len(data["result"]["certs"]) > 0, data["result"]["certs"]
+        assert len(data["result"]["body"]) > 0, data["result"]["body"]
+        assert data.get("error") == None, data.get("error")
 
 
 if __name__ == "__main__":
-    test(TEST_URL, 200)
-    print("Mainline test succeeded!")
+    test(TEST_URL_2XX, 200)
+    print("2xx response test succeeded!")
     test(TEST_URL_NON_2XX, 404)
     print("Non 2xx response test succeeded!")
-    test(TEST_URL_REFUSED, 0)
+    test(TEST_URL_REFUSED, None)
     print("Connection refused test succeeded!")
-

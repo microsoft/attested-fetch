@@ -46,9 +46,10 @@ namespace afetch {
   {
   public:
     struct Response {
+      int64_t status;
       std::vector<uint8_t> body;
       std::vector<std::string> cert_chain;
-      int64_t status;
+      std::string error_message;
     };
 
     static void global_init() {
@@ -91,13 +92,11 @@ namespace afetch {
 
       auto res = curl_easy_perform(curl);
       if (res != CURLE_OK) {
+        response.error_message = curl_easy_strerror(res);
         if (verbose) {
-          const char* err_s = curl_easy_strerror(res);
-          std::cerr << "Fetch failed: " << err_s << std::endl;
+          std::cerr << "Fetch failed: " << response.error_message << std::endl;
         }
-        response.status = 0;
-        response.body = std::vector<uint8_t>{};
-        response.cert_chain = std::vector<std::string>{};
+        response.status = NULL;
         return response;
       }
 
