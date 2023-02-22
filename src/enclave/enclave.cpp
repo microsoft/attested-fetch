@@ -21,20 +21,26 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
     oe_load_module_host_resolver();
     afetch::Curl::global_init();
 
-    std::string format = "ATTESTED_FETCH_OE_SGX_ECDSA";
-    
+    std::string format = "ATTESTED_FETCH_OE_SGX_ECDSA_V2";
+
     try {
         afetch::Curl curl;
 
-        // Fetch URL
-        auto response = curl.fetch(url);
-
-        // Create output JSON
+        // Initialise output JSON
         nlohmann::json j;
         j["url"] = url;
         j["nonce"] = nonce;
-        j["body"] = afetch::base64(response.body);
-        j["certs"] = response.cert_chain;
+
+        // Fetch URL
+        try {
+            auto response = curl.fetch(url);
+            j["result"]["status"] = response.status;
+            j["result"]["body"] = afetch::base64(response.body);
+            j["result"]["certs"] = response.cert_chain;
+        }
+        catch (afetch::CurlError& e ) {
+            j["error"]["message"] = e.what();
+        }
 
         std::string data_json = j.dump(1);
         std::vector<uint8_t> data_hash = afetch::sha256(data_json);

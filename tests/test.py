@@ -10,10 +10,13 @@ DIST_DIR = THIS_DIR.parent / 'dist'
 
 OEVERIFY = "/opt/openenclave/bin/oeverify"
 
-TEST_URL = "https://www.microsoft.com/en-gb/"
+TEST_URL_2XX = "https://www.microsoft.com/en-gb/"
+TEST_URL_NON_2XX = "https://www.microsoft.com/en-gbb/foo"
+TEST_URL_REFUSED = "https://localhost:1"
 TEST_NONCE = "nonce123"
 
-def test():
+
+def test(url, expected_status):
     out_path = "test.json"
 
     # Run afetch
@@ -21,17 +24,17 @@ def test():
         DIST_DIR / "afetch",
         DIST_DIR / "libafetch.enclave.so.signed",
         out_path,
-        TEST_URL, TEST_NONCE
+        url, TEST_NONCE
         ], check=True)
-    
+
     # Read attested result
     with open(out_path) as f:
         out = json.load(f)
 
     # Check if the format is known
-    if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA":
+    if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA_V2":
         raise RuntimeError(f"Unsupported format: {out['format']}")
-    
+
     # Verify evidence and endorsements using Open Enclave
     with tempfile.TemporaryDirectory() as tmpdir:
         # Run oeverify
@@ -44,7 +47,7 @@ def test():
         result = subprocess.run([
             OEVERIFY, "-r", evidence_path, "-e", endorsements_path
             ], capture_output=True, universal_newlines=True, check=True)
-        
+
         # Extract report data from stdout
         prefix = "sgx_report_data:"
         sgx_report_data = None
@@ -64,10 +67,21 @@ def test():
     # Finally, check if the data is valid JSON
     data = json.loads(data_json)
     assert data["nonce"] == TEST_NONCE, data["nonce"]
-    assert data["url"] == TEST_URL, data["url"]
-    assert len(data["certs"]) > 0, data["certs"]
-    assert len(data["body"]) > 0, data["body"]
+    assert data["url"] == url, data["url"]
+    if expected_status is None:
+        assert "result" not in data, data["result"]
+        assert data["error"]["message"] == "Curl error: Couldn't connect to server (https://localhost:1)", data["error"]["message"]
+    else:
+        assert data["result"]["status"] == expected_status, data["result"]["status"]
+        assert len(data["result"]["certs"]) > 0, data["result"]["certs"]
+        assert len(data["result"]["body"]) > 0, data["result"]["body"]
+        assert "error" not in data, data["error"]
+
 
 if __name__ == "__main__":
-    test()
-    print("All tests succeeded!")
+    test(TEST_URL_2XX, 200)
+    print("2xx response test succeeded!")
+    test(TEST_URL_NON_2XX, 404)
+    print("Non 2xx response test succeeded!")
+    test(TEST_URL_REFUSED, None)
+    print("Connection refused test succeeded!")
