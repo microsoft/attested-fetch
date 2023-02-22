@@ -26,22 +26,6 @@ namespace afetch {
     const std::string url;
   };
 
-  class CurlHTTPError : public CurlError {
-  public:
-    explicit CurlHTTPError(const std::string& url, int status_code)
-        : CurlError("HTTP code " + std::to_string(status_code), url), status_code(status_code) {}
-
-    const int status_code;
-  };
-
-  class CurlOtherError : public CurlError {
-  public:
-    explicit CurlOtherError(const std::string& msg, const std::string& url, int error_code)
-        : CurlError(msg, url), error_code(error_code) {}
-
-    const int error_code;
-  };
-
   class Curl
   {
   public:
@@ -49,7 +33,6 @@ namespace afetch {
       int64_t status;
       std::vector<uint8_t> body;
       std::vector<std::string> cert_chain;
-      std::string error_message;
     };
 
     static void global_init() {
@@ -92,12 +75,11 @@ namespace afetch {
 
       auto res = curl_easy_perform(curl);
       if (res != CURLE_OK) {
-        response.error_message = curl_easy_strerror(res);
+        const std::string error_message = curl_easy_strerror(res);
         if (verbose) {
-          std::cerr << "Fetch failed: " << response.error_message << std::endl;
+          std::cerr << "Fetch failed: " << error_message << std::endl;
         }
-        response.status = NULL;
-        return response;
+        throw CurlError(error_message, url);
       }
 
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response.status);

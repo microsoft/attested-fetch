@@ -26,7 +26,7 @@ def test(url, expected_status):
         out_path,
         url, TEST_NONCE
         ], check=True)
-    
+
     # Read attested result
     with open(out_path) as f:
         out = json.load(f)
@@ -34,7 +34,7 @@ def test(url, expected_status):
     # Check if the format is known
     if out["format"] != "ATTESTED_FETCH_OE_SGX_ECDSA_V2":
         raise RuntimeError(f"Unsupported format: {out['format']}")
-    
+
     # Verify evidence and endorsements using Open Enclave
     with tempfile.TemporaryDirectory() as tmpdir:
         # Run oeverify
@@ -47,7 +47,7 @@ def test(url, expected_status):
         result = subprocess.run([
             OEVERIFY, "-r", evidence_path, "-e", endorsements_path
             ], capture_output=True, universal_newlines=True, check=True)
-        
+
         # Extract report data from stdout
         prefix = "sgx_report_data:"
         sgx_report_data = None
@@ -69,13 +69,13 @@ def test(url, expected_status):
     assert data["nonce"] == TEST_NONCE, data["nonce"]
     assert data["url"] == url, data["url"]
     if expected_status is None:
-        assert data.get("result") == None, data.get("result")
-        assert data["error"]["message"] == "Couldn't connect to server", data["error"]["message"]
+        assert "result" not in data, data["result"]
+        assert data["error"]["message"] == "Curl error: Couldn't connect to server (https://localhost:1)", data["error"]["message"]
     else:
         assert data["result"]["status"] == expected_status, data["result"]["status"]
         assert len(data["result"]["certs"]) > 0, data["result"]["certs"]
         assert len(data["result"]["body"]) > 0, data["result"]["body"]
-        assert data.get("error") == None, data.get("error")
+        assert "error" not in data, data["error"]
 
 
 if __name__ == "__main__":
