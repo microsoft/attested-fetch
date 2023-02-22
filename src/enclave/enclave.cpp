@@ -32,7 +32,7 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
         j["nonce"] = nonce;
 
         // Fetch URL
-        try{
+        try {
             auto response = curl.fetch(url);
             j["result"]["status"] = response.status;
             j["result"]["body"] = afetch::base64(response.body);
