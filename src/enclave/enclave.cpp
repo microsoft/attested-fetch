@@ -26,23 +26,7 @@ extern "C" void enclave_main(const char* url, const char* nonce, char** output) 
     try {
         afetch::Curl curl;
 
-        // Initialise output JSON
-        nlohmann::json j;
-        j["url"] = url;
-        j["nonce"] = nonce;
-
-        // Fetch URL
-        try {
-            auto response = curl.fetch(url);
-            j["result"]["status"] = response.status;
-            j["result"]["body"] = afetch::base64(response.body);
-            j["result"]["certs"] = response.cert_chain;
-        }
-        catch (afetch::CurlError& e ) {
-            j["error"]["message"] = e.what();
-        }
-
-        std::string data_json = j.dump(1);
+        std::string data_json = curl.fetch(url, nonce).dump(1);
         std::vector<uint8_t> data_hash = afetch::sha256(data_json);
         std::string data = afetch::base64(data_json);
 
