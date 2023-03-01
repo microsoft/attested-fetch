@@ -3,9 +3,14 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-project(afetch-superbuild C CXX)
-
 set(COMPILE_TARGET "sgx" CACHE STRING "Target compilation platform, either 'sgx' or 'virtual'")
+
+if(COMPILE_TARGET STREQUAL "sgx" AND (NOT CMAKE_CXX_COMPILER) AND "$ENV{CXX}" STREQUAL "")
+set(CMAKE_C_COMPILER "/opt/oe_lvi/clang-10")
+set(CMAKE_CXX_COMPILER "/opt/oe_lvi/clang++-10")
+endif()
+
+project(afetch-superbuild C CXX)
 
 include(ExternalProject)
 include(CTest)
