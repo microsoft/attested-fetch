@@ -15,6 +15,20 @@ Run manually:
 dist/afetch dist/libafetch.enclave.so out.json https://github.com nonce42
 ```
 
+## Virtual mode
+
+In addition to the normal mode of usage described above, attested fetch may be
+used in a "virtual mode". In this mode, no SGX enclave is used. This can be
+useful for development, but provides no verifiable security guarantees about
+its output.
+
+Virtual mode can be enabled by setting the `PLATFORM` variable:
+```sh
+export PLATFORM=virtual
+./build.sh
+./test.sh
+```
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

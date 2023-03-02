@@ -16,9 +16,13 @@ pr:
 resources:
   containers:
   - container: sgx
-  # TODO: use image specific to this project
+    # TODO: use image specific to this project
     image: ccfciteam/ccf-app-ci:2.0.0-rc4
     options: --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision -v /dev/sgx:/dev/sgx
+
+  - container: virtual
+    # TODO: use image specific to this project
+    image: ccfciteam/ccf-app-ci:2.0.0-rc4
 
 jobs:
 - job: sgx
@@ -39,6 +43,28 @@ jobs:
       sudo usermod -a -G sgx_prv $(whoami)
     displayName: Add sgx_prv group
     
+  - bash: ./build.sh
+    displayName: Build
+  
+  - bash: ./test.sh
+    displayName: Test
+
+- job: virtual
+  displayName: Virtual
+  variables:
+    PLATFORM: virtual
+
+  container: virtual
+  steps:
+  - checkout: self
+    submodules: true
+    clean: true
+
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y libcurl4-openssl-dev
+    displayName: Install dependencies
+
   - bash: ./build.sh
     displayName: Build
   

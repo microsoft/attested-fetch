@@ -7,14 +7,13 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <map>
 
 #include <curl/curl.h>
+#include <nlohmann/json.hpp>
 
-#include <mbedtls/pk.h>
-#include <mbedtls/x509_crt.h>
-#include <mbedtls/x509_crl.h>
-#include <mbedtls/ssl.h>
+#include "util.h"
 
 namespace afetch {
 
@@ -36,7 +35,6 @@ namespace afetch {
     };
 
     static void global_init() {
-      curl_global_sslset(CURLSSLBACKEND_MBEDTLS, nullptr, nullptr);
       curl_global_init(CURL_GLOBAL_ALL);
     }
 
@@ -55,7 +53,26 @@ namespace afetch {
       curl_easy_cleanup(curl);
     }
 
-    Response fetch(const std::string& url) {
+    nlohmann::json fetch(const std::string& url, const std::string& nonce)
+    {
+      nlohmann::json j;
+      j["url"] = url;
+      j["nonce"] = nonce;
+
+      try {
+          auto response = fetch_response(url);
+          j["result"]["status"] = response.status;
+          j["result"]["body"] = base64(response.body);
+          j["result"]["certs"] = response.cert_chain;
+      }
+      catch (afetch::CurlError& e) {
+          j["error"]["message"] = e.what();
+      }
+
+      return j;
+    }
+
+    Response fetch_response(const std::string& url) {
       Response response;
 
       curl_easy_setopt(curl, CURLOPT_URL, url.c_str());

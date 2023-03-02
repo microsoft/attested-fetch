@@ -20,15 +20,14 @@ add_library(afetch.enclave SHARED
     enclave.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/afetch_t.c)
 
-# Needed for the generated file fetch_t.h
 target_include_directories(afetch.enclave PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}
+    ../common
+    ${CMAKE_CURRENT_BINARY_DIR} # Needed for the generated file fetch_t.h
     ${CMAKE_SOURCE_DIR}/../3rdparty/nlohmann-json/single_include
-    )
+)
 
 target_link_libraries(afetch.enclave
     openenclave-curl::libcurl
-    openenclave::oecryptombedtls
     openenclave::oeenclave
     openenclave::oelibc)
 
