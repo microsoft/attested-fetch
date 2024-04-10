@@ -1,13 +1,15 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 
 set(COMPILE_TARGET "sgx" CACHE STRING "Target compilation platform, either 'sgx' or 'virtual'")
 
 if(COMPILE_TARGET STREQUAL "sgx" AND (NOT CMAKE_CXX_COMPILER) AND "$ENV{CXX}" STREQUAL "")
-set(CMAKE_C_COMPILER "/opt/oe_lvi/clang-10")
-set(CMAKE_CXX_COMPILER "/opt/oe_lvi/clang++-10")
+    set(CMAKE_C_COMPILER "clang-11")
+    message("Set CMAKE_C_COMPILER to clang-11")
+    set(CMAKE_CXX_COMPILER "clang++-11")
+    message("Set CMAKE_CXX_COMPILER to clang++-11")
 endif()
 
 project(afetch-superbuild C CXX)
