@@ -1,7 +1,9 @@
-# attested-fetch
+# attested-fetch (archived)
 
 An experimental tool for fetching content from an HTTPS URL within an SGX enclave.
 The output is a JSON file containing SGX evidence and the HTTPS response.
+
+An example implementation could be seen in [scitt-ccf-ledger](https://github.com/microsoft/scitt-ccf-ledger/blob/97799deb0d7f64690cc100102539ff9731ad5b7b/.gitmodules) prior to the removal of `did:web` issuer verification.
 
 ## Getting started
 
